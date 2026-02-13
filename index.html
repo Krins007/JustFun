@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html class="dark" lang="en">
 <head>
@@ -20,10 +21,7 @@
                         primary: "#6366f1",
                         "background-light": "#f8fafc",
                         "background-dark": "#020408",
-                        "surface-light": "#ffffff",
                         "surface-dark": "#0a0c14",
-                        "border-light": "#e2e8f0",
-                        "border-dark": "#1e293b"
                     },
                     fontFamily: {
                         display: "Manrope"
@@ -36,109 +34,77 @@
                     },
                     boxShadow: {
                         glow: "0 0 20px -5px rgba(99, 102, 241, 0.6)",
-                        'vibrant-indigo': "0 0 15px rgba(99, 102, 241, 0.5)",
-                        'cosmic-soft': "0 20px 40px -15px rgba(0, 0, 0, 0.5)",
-                        'aurora': "0 0 30px -5px rgba(129, 140, 248, 0.4), 0 0 15px -5px rgba(168, 85, 247, 0.4)",
+                        'super-glow': "0 0 40px -10px rgba(168, 85, 247, 0.5)",
                     },
                     animation: {
                         'shimmer': 'shimmer 2s linear infinite',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'gradient-x': 'gradient-x 3s ease infinite',
-                        'border-spin': 'border-spin 4s linear infinite',
-                        'slide-up-fade': 'slide-up-fade 0.7s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+                        'slide-up-fade': 'slide-up-fade 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards',
                         'text-gradient': 'text-gradient 3s linear infinite',
                         'blob': 'blob 15s infinite',
-                        'nebula-pulse': 'nebula-pulse 10s ease-in-out infinite',
                         'float': 'float 6s ease-in-out infinite',
-                        'float-delayed': 'float 6s ease-in-out infinite 3s',
-                        'reveal': 'reveal 0.8s cubic-bezier(0.77, 0, 0.175, 1) forwards',
-                        'brand-bounce': 'brand-bounce 2s infinite ease-in-out',
-                        'wiggle': 'wiggle 0.5s ease-in-out infinite',
                         'pop-in': 'pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                        'float-mascot': 'float-mascot 4s ease-in-out infinite',
-                        'spin-slow': 'spin 8s linear infinite',
-                        'spin-reverse-slow': 'spin-reverse 12s linear infinite',
-                        'message-in': 'message-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                        'message-in': 'message-in 0.45s cubic-bezier(0.25, 1, 0.3, 1) forwards',
+                        'spring-in': 'spring-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
                     },
                     keyframes: {
                         shimmer: {
                             '0%': { backgroundPosition: '-200% 0' },
                             '100%': { backgroundPosition: '200% 0' }
                         },
-                        'gradient-x': {
-                            '0%, 100%': {
-                                'background-size': '200% 200%',
-                                'background-position': 'left center'
-                            },
-                            '50%': {
-                                'background-size': '200% 200%',
-                                'background-position': 'right center'
-                            },
+                        'bounce-subtle': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-6px)' }
                         },
                         'slide-up-fade': {
-                            '0%': { opacity: '0', transform: 'translateY(30px) scale(0.95)' },
-                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
                         },
                         'message-in': {
-                            '0%': { opacity: '0', transform: 'translateY(20px) scale(0.9) skewX(-2deg)' },
-                            '100%': { opacity: '1', transform: 'translateY(0) scale(1) skewX(0deg)' },
+                            '0%': { opacity: '0', transform: 'translateY(30px) scale(0.95)', filter: 'blur(4px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)', filter: 'blur(0)' },
+                        },
+                        'spring-in': {
+                            '0%': { opacity: '0', transform: 'scale(0.8)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
                         },
                         'text-gradient': {
                             'to': { backgroundPosition: '200% center' }
                         },
                         blob: {
                             '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                            '33%': { transform: 'translate(60px, -80px) scale(1.3)' },
-                            '66%': { transform: 'translate(-40px, 40px) scale(0.7)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
                             '100%': { transform: 'translate(0px, 0px) scale(1)' },
-                        },
-                        'nebula-pulse': {
-                            '0%, 100%': { opacity: '0.15', transform: 'scale(1)' },
-                            '50%': { opacity: '0.3', transform: 'scale(1.15)' },
                         },
                         float: {
                             '0%, 100%': { transform: 'translateY(0)' },
                             '50%': { transform: 'translateY(-10px)' },
                         },
-                        reveal: {
-                            '0%': { transform: 'translateY(100%)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        },
-                        'brand-bounce': {
-                            '0%, 100%': { transform: 'translateY(0) scale(1)' },
-                            '50%': { transform: 'translateY(-3px) scale(1.02)' },
-                        },
-                        wiggle: {
-                            '0%, 100%': { transform: 'rotate(-3deg)' },
-                            '50%': { transform: 'rotate(3deg)' },
-                        },
                         'pop-in': {
                             '0%': { transform: 'scale(0)', opacity: '0' },
                             '100%': { transform: 'scale(1)', opacity: '1' },
                         },
-                        'float-mascot': {
-                            '0%, 100%': { transform: 'translateY(0) translateX(0)' },
-                            '25%': { transform: 'translateY(-5px) translateX(2px)' },
-                            '50%': { transform: 'translateY(2px) translateX(-2px)' },
-                            '75%': { transform: 'translateY(-3px) translateX(1px)' },
-                        },
-                        'spin-reverse': {
-                            from: { transform: 'rotate(360deg)' },
-                            to: { transform: 'rotate(0deg)' }
-                        }
                     }
                 }
             }
         };
     </script>
     <style>
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
+        :root {
+            --anim-easing: cubic-bezier(0.25, 1, 0.3, 1);
+            --anim-duration: 0.3s;
         }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
         }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
         .text-gradient {
             background-clip: text;
             -webkit-background-clip: text;
@@ -146,81 +112,121 @@
             background-image: linear-gradient(to right, #818cf8, #c084fc, #f472b6, #818cf8);
             background-size: 200% auto;
         }
-        .galaxy-overlay {
-            background: radial-gradient(circle at center, transparent 0%, rgba(2, 4, 8, 0.4) 100%);
-            pointer-events: none;
-        }
+
         .glass-panel {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .hover-lift {
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .hover-lift:hover {
-            transform: translateY(-4px) scale(1.02);
-        }
-        /* Branding Specific Styles */
-        .branding-perspective {
-            perspective: 1000px;
-        }
-        .branding-card {
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transform-style: preserve-3d;
-        }
-        .branding-area:hover .branding-card {
-            transform: rotateY(10deg) rotateX(5deg) translateZ(10px);
+            transition: all var(--anim-duration) var(--anim-easing);
+            will-change: transform, opacity, box-shadow;
         }
 
-        /* React Flow Overrides */
-        .react-flow__node {
-          border-radius: 1.5rem !important;
+        .hover-lift:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.2);
         }
-        .react-flow__handle {
-          width: 10px !important;
-          height: 10px !important;
-          background: #6366f1 !important;
-          border: 2px solid #fff !important;
+
+        .message-liquid {
+            position: relative;
+            overflow: hidden;
         }
-        .react-flow__edge-path {
-          stroke: rgba(99, 102, 241, 0.3) !important;
-          stroke-width: 2.5 !important;
+        
+        .message-liquid::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.02), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.8s ease;
         }
-        .react-flow__controls {
-          background: rgba(13, 16, 29, 0.8) !important;
-          backdrop-filter: blur(10px) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
-          border-radius: 1rem !important;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+        .message-liquid:hover::before {
+            transform: translateX(100%);
         }
-        .react-flow__controls-button {
-          background: transparent !important;
-          border: none !important;
-          fill: #fff !important;
-          border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+
+        .cyber-pill {
+            position: relative;
+            background: #0a0b14;
+            border-radius: 2rem;
+            padding: 2px;
+            overflow: hidden;
+            transition: all 0.4s var(--anim-easing);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
-        .react-flow__background {
-          background-color: transparent !important;
+        .cyber-pill::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(transparent, rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.3), transparent 30%);
+            animation: spin 8s linear infinite;
+        }
+        .cyber-pill-inner {
+            position: relative;
+            background: #0a0b14;
+            border-radius: calc(2rem - 2px);
+            z-index: 2;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #6366f1;
+            border-radius: 50%;
+            animation: typing-bounce 1s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing-bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+            40% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .staggered-list > * {
+            opacity: 0;
+            animation: slide-up-fade 0.5s var(--anim-easing) forwards;
+        }
+        .staggered-list > *:nth-child(1) { animation-delay: 0.05s; }
+        .staggered-list > *:nth-child(2) { animation-delay: 0.1s; }
+        .staggered-list > *:nth-child(3) { animation-delay: 0.15s; }
+        .staggered-list > *:nth-child(4) { animation-delay: 0.2s; }
+
+        .shimmer-skeleton {
+            background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        .momentum-scroll {
+            -webkit-overflow-scrolling: touch;
         }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
     "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react-dom": "https://esm.sh/react-dom@^19.2.4",
     "react-markdown": "https://esm.sh/react-markdown@9?bundle",
     "@google/genai": "https://esm.sh/@google/genai",
-    "react-syntax-highlighter": "https://esm.sh/react-syntax-highlighter@15.5.0/dist/esm/prism?bundle",
-    "react-syntax-highlighter/styles/prism/vsc-dark-plus": "https://esm.sh/react-syntax-highlighter@15.5.0/dist/esm/styles/prism/vsc-dark-plus?bundle",
+    "react-syntax-highlighter": "https://esm.sh/react-syntax-highlighter@15.5.0?bundle",
+    "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus": "https://esm.sh/react-syntax-highlighter@15.5.0/dist/esm/styles/prism/vsc-dark-plus?bundle",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
     "react-syntax-highlighter/": "https://esm.sh/react-syntax-highlighter@^16.1.0/",
-    "reactflow": "https://esm.sh/reactflow@11.10.1?bundle"
+    "reactflow": "https://esm.sh/reactflow@^11.11.4"
   }
 }
 </script>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 font-display transition-colors duration-200 h-screen overflow-hidden selection:bg-indigo-500 selection:text-white">
+<body class="bg-[#020408] text-gray-100 font-display transition-colors duration-200 h-screen overflow-hidden selection:bg-indigo-500/30">
     <div id="root" class="h-full w-full"></div>
 </body>
 </html>

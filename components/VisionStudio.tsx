@@ -1,119 +1,174 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { GoogleGenAI } from "@google/genai";
 
-type VisionTab = 'generate' | 'edit' | 'analyze' | 'history';
+type VisionTab = 'trending' | 'generate' | 'edit' | 'analyze';
 
-interface VisionHistoryItem {
-  id: string;
-  type: VisionTab;
-  imageUrl: string;
+interface Tool {
+  name: string;
+  description: string;
+  icon: string;
   prompt: string;
-  timestamp: number;
+  color: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  gradient: string;
+  tools: Tool[];
 }
 
 const VisionStudio: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<VisionTab>('generate');
+  const [activeTab, setActiveTab] = useState<VisionTab>('trending');
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<string>('');
-  const [history, setHistory] = useState<VisionHistoryItem[]>([]);
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [style, setStyle] = useState('photorealistic');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const triggerHaptic = (ms: number = 10) => {
-    if ('vibrate' in navigator) navigator.vibrate(ms);
-  };
+  const categories: Category[] = useMemo(() => [
+    {
+      id: 'viral-styles',
+      name: 'Viral Styles',
+      description: 'Anime, Ghibli & Pixar',
+      icon: 'auto_fix_high',
+      gradient: 'from-indigo-600 to-blue-700',
+      tools: [
+        { name: 'Ghibli Magic', color: 'text-emerald-400', description: 'Watercolor anime style', icon: 'forest', prompt: 'Transform into Studio Ghibli anime style. Soft watercolor textures, hand-painted backgrounds, warm lighting, whimsical atmosphere, 1990s anime cel shading.' },
+        { name: 'Makoto Shinkai', color: 'text-blue-400', description: 'Dramatic skies & lighting', icon: 'cloud', prompt: 'Convert to Makoto Shinkai style. Hyper-detailed skies, dramatic lighting, urban landscapes, emotional atmosphere, vibrant color grading.' },
+        { name: 'Claymation', color: 'text-orange-400', description: '3D stop-motion aesthetic', icon: 'interests', prompt: 'Transform into claymation style. Aardman Animation aesthetic, fingerprint textures on clay, stop-motion lighting, physical miniature sets.' },
+        { name: 'Pixar 3D', color: 'text-pink-400', description: 'Professional CGI render', icon: 'movie_filter', prompt: 'Convert to Pixar 3D animation style. Subsurface scattering skin, exaggerated proportions, big expressive eyes, physically-based rendering, Toy Story aesthetic.' }
+      ]
+    },
+    {
+      id: 'retro-lab',
+      name: 'Retro Lab',
+      description: 'Nostalgic film stock',
+      icon: 'camera_roll',
+      gradient: 'from-amber-600 to-orange-700',
+      tools: [
+        { name: '80s Synthwave', color: 'text-fuchsia-400', description: 'Neon grid aesthetics', icon: 'grid_view', prompt: 'Transform into 1980s synthwave aesthetic. Neon pink and cyan grid lines, sunset gradients, chrome reflections, retro futuristic.' },
+        { name: '90s Grunge', color: 'text-stone-400', description: 'Film grain & textures', icon: 'grain', prompt: 'Apply 90s grunge aesthetic. Film grain, muted colors, distressed textures, photocopied look, zine aesthetic.' },
+        { name: 'Kodak Portra', color: 'text-yellow-400', description: 'Classic film stock', icon: 'photo_camera', prompt: 'Apply Kodak Portra 400 characteristics. Warm skin tones, soft grain, pastel colors, authentic film structure.' },
+        { name: 'VHS Damage', color: 'text-purple-400', description: 'Analog degradation', icon: 'videocam_off', prompt: 'Apply VHS tracking error lines and chrominance noise. Analog video degradation, 1980s consumer camcorder aesthetic.' }
+      ]
+    },
+    {
+      id: 'portrait-hub',
+      name: 'Portrait Hub',
+      description: 'Yearbook & Age effects',
+      icon: 'face_retouching_natural',
+      gradient: 'from-purple-600 to-pink-700',
+      tools: [
+        { name: '90s Yearbook', color: 'text-blue-300', description: 'Viral school photo trend', icon: 'school', prompt: 'Transform into 1990s American high school yearbook photo. Blue banner background, soft studio lighting, feathered hair, vintage photo quality.' },
+        { name: 'Age Transformer', color: 'text-gray-300', description: 'Age progression/regression', icon: 'history', prompt: 'Elder vision aging effect. Wrinkles, gray hair, wise expression, time passage, dignified aging.' },
+        { name: 'Na\'vi Avatar', color: 'text-cyan-400', description: 'Pandora tribal look', icon: 'nature_people', prompt: 'Transform into Avatar movie Na\'vi. Blue skin, bioluminescent spots, large yellow eyes, cat-like features, tribal markings.' },
+        { name: 'Bold Glamour', color: 'text-rose-400', description: 'Beauty enhancement', icon: 'sparkles', prompt: 'Apply professional beauty retouching. Skin smoothing, eye brightening, subtle face sculpting, maintain natural texture.' }
+      ]
+    },
+    {
+      id: 'background',
+      name: 'BG Magic',
+      description: 'Sky swap & expansion',
+      icon: 'wallpaper',
+      gradient: 'from-cyan-600 to-teal-700',
+      tools: [
+        { name: 'Golden Hour', color: 'text-orange-300', description: 'Sunset lighting match', icon: 'wb_sunny', prompt: 'Swap sky to golden hour sunset. Warm orange and pink tones, long shadows, adjust foreground lighting to match.' },
+        { name: 'Season Shifter', color: 'text-blue-100', description: 'Spring to Winter', icon: 'ac_unit', prompt: 'Transform to winter wonderland. Snow coverage, bare branches, cool blue lighting, snowflakes, cozy atmosphere.' },
+        { name: 'Infinite Zoom', color: 'text-indigo-300', description: 'AI outpainting', icon: 'zoom_out_map', prompt: 'Expand canvas by 200% in all directions. Generate coherent extension matching original style and perspective.' },
+        { name: 'Tourist Remover', color: 'text-red-300', description: 'Clean landmark shots', icon: 'person_remove', prompt: 'Remove all people and moving objects from scene. Reconstruct background naturally using surrounding context.' }
+      ]
+    }
+  ], []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setCurrentImage(event.target?.result as string);
-        triggerHaptic(15);
-      };
-      reader.readAsDataURL(file);
+  const handle429Error = async () => {
+    // If we hit 429, it means the shared key is exhausted.
+    // Offer the user to use their own key (which has a separate free quota).
+    const confirmed = window.confirm("Rate limit reached on shared key. Would you like to use your own personal API key for higher individual limits? (Free-tier projects are supported)");
+    if (confirmed) {
+      await (window as any).aistudio.openSelectKey();
     }
   };
 
-  const addToHistory = (imageUrl: string, type: VisionTab, p: string) => {
-    const newItem: VisionHistoryItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      imageUrl,
-      type,
-      prompt: p,
-      timestamp: Date.now()
-    };
-    setHistory(prev => [newItem, ...prev]);
+  const initiateAction = (mode: 'generate' | 'edit') => {
+    if (!selectedTool) return;
+    setPrompt(selectedTool.prompt);
+    setActiveTab(mode);
+    if (mode === 'edit' && !currentImage) {
+      fileInputRef.current?.click();
+    }
   };
 
   const generateImage = async () => {
     if (!prompt.trim()) return;
     setIsLoading(true);
     setResultImage(null);
-    triggerHaptic(20);
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [{ text: `${prompt}. Style: ${style}. Aspect ratio: ${aspectRatio}` }],
-        },
-        config: {
-          imageConfig: { aspectRatio: aspectRatio as any }
+      const config: any = {
+        imageConfig: { 
+          aspectRatio: aspectRatio as any
         }
-      });
+      };
 
-      for (const part of response.candidates?.[0]?.content.parts || []) {
-        if (part.inlineData) {
-          const b64 = `data:image/png;base64,${part.inlineData.data}`;
-          setResultImage(b64);
-          addToHistory(b64, 'generate', prompt);
-        }
+      let response;
+      const modelName = 'gemini-2.5-flash-image';
+
+      if (activeTab === 'edit' && currentImage) {
+        const base64Data = currentImage.split(',')[1];
+        response = await ai.models.generateContent({
+          model: modelName,
+          contents: {
+            parts: [
+              { inlineData: { data: base64Data, mimeType: 'image/png' } },
+              { text: prompt }
+            ],
+          },
+          config
+        });
+      } else {
+        response = await ai.models.generateContent({
+          model: modelName,
+          contents: {
+            parts: [{ text: `${prompt}. Style: ${style}.` }],
+          },
+          config
+        });
       }
-    } catch (error) {
-      console.error("Generation error:", error);
-      setAnalysisResult("System fault during synthesis. Check neural link (API key/Quota).");
+
+      const parts = response.candidates?.[0]?.content.parts || [];
+      const imgPart = parts.find(p => p.inlineData);
+      if (imgPart?.inlineData) {
+        setResultImage(`data:image/png;base64,${imgPart.inlineData.data}`);
+      }
+    } catch (error: any) {
+      console.error(error);
+      const errorMsg = error.message || "";
+      if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED')) {
+        await handle429Error();
+      }
+      setAnalysisResult(`Synthesis failed: ${errorMsg}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const editImage = async (editPrompt: string) => {
-    if (!currentImage) return;
-    setIsLoading(true);
-    triggerHaptic(20);
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const base64Data = currentImage.split(',')[1];
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [
-            { inlineData: { data: base64Data, mimeType: 'image/png' } },
-            { text: editPrompt }
-          ],
-        },
-      });
-
-      for (const part of response.candidates?.[0]?.content.parts || []) {
-        if (part.inlineData) {
-          const b64 = `data:image/png;base64,${part.inlineData.data}`;
-          setResultImage(b64);
-          addToHistory(b64, 'edit', editPrompt);
-        }
-      }
-    } catch (error) {
-      console.error("Editing error:", error);
-    } finally {
-      setIsLoading(false);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => setCurrentImage(event.target?.result as string);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -121,382 +176,332 @@ const VisionStudio: React.FC = () => {
     if (!currentImage) return;
     setIsLoading(true);
     setAnalysisResult('');
-    triggerHaptic(20);
-
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const base64Data = currentImage.split(',')[1];
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-flash-lite-latest', // Use Lite for higher limits on text analysis
         contents: {
           parts: [
             { inlineData: { data: base64Data, mimeType: 'image/png' } },
             { text: task }
           ],
         },
+        config: {
+          systemInstruction: "Analyze visual stream with high precision and brevity."
+        }
       });
-
-      setAnalysisResult(response.text || "No insights extracted.");
-    } catch (error) {
-      console.error("Analysis error:", error);
+      setAnalysisResult(response.text || "No insights found.");
+    } catch (error: any) {
+      console.error(error);
+      if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+        await handle429Error();
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const tabs = [
-    { id: 'generate', icon: 'auto_awesome', label: 'Create' },
-    { id: 'edit', icon: 'edit', label: 'Edit' },
-    { id: 'analyze', icon: 'biotech', label: 'Insight' },
-    { id: 'history', icon: 'history', label: 'Archives' }
-  ];
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'generate':
-        return (
-          <div className="space-y-6 animate-slide-up-fade">
-            <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Visual Prompt</label>
-              <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500"></div>
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe your vision in high fidelity..."
-                  className="relative w-full bg-[#0d0f17] border border-white/10 rounded-2xl p-4 text-white placeholder-gray-700 focus:ring-1 focus:ring-purple-500/30 transition-all resize-none h-32 text-sm leading-relaxed"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Style</label>
-                <select 
-                  value={style} 
-                  onChange={(e) => setStyle(e.target.value)}
-                  className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-xs text-gray-300 outline-none hover:bg-white/10 transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="photorealistic">Photorealistic</option>
-                  <option value="artistic">Artistic Expression</option>
-                  <option value="anime">Cinematic Anime</option>
-                  <option value="sketch">Hand-drawn Sketch</option>
-                  <option value="3d">3D Render</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Aspect Ratio</label>
-                <select 
-                  value={aspectRatio} 
-                  onChange={(e) => setAspectRatio(e.target.value)}
-                  className="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-xs text-gray-300 outline-none hover:bg-white/10 transition-colors appearance-none cursor-pointer"
-                >
-                  <option value="1:1">1:1 Square</option>
-                  <option value="16:9">16:9 Landscape</option>
-                  <option value="9:16">9:16 Portrait</option>
-                  <option value="4:3">4:3 Desktop</option>
-                </select>
-              </div>
-            </div>
-
-            <button 
-              onClick={generateImage}
-              disabled={isLoading || !prompt.trim()}
-              className="w-full py-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-30 rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] text-white shadow-glow transition-all active:scale-[0.98] group relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
-              {isLoading ? 'Synthesizing Vision...' : 'Generate Art'}
-            </button>
-          </div>
-        );
-
-      case 'edit':
-      case 'analyze':
-        // Fix: Removed 'enhance' case as it is not part of the VisionTab union type.
-        return (
-          <div className="space-y-6 animate-slide-up-fade">
-            {!currentImage ? (
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-white/10 rounded-3xl p-12 flex flex-col items-center justify-center cursor-pointer hover:border-purple-500/40 hover:bg-purple-500/5 transition-all group relative overflow-hidden"
-              >
-                <div className="absolute -inset-[100%] bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.1)_0%,transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
-                <span className="material-symbols-outlined text-4xl text-gray-700 group-hover:text-purple-400 group-hover:scale-110 transition-all mb-4 relative z-10">add_photo_alternate</span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 group-hover:text-purple-300 relative z-10">Initiate Data Upload</p>
-                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} accept="image/*" />
-              </div>
-            ) : (
-              <div className="space-y-6 animate-pop-in">
-                <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/40 group/edit-img">
-                  <img src={currentImage} className="w-full h-auto max-h-[350px] object-contain transition-transform duration-700 group-hover/edit-img:scale-105" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/edit-img:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <button 
-                      onClick={() => setCurrentImage(null)}
-                      className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-red-500/80 transition-all hover:scale-110"
-                    >
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
-                </div>
-
-                {activeTab === 'edit' && (
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Edit Command</label>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="e.g. 'remove background'..."
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:ring-1 focus:ring-purple-500/30 transition-all outline-none placeholder:text-gray-700"
-                      />
-                      <button 
-                        onClick={() => editImage(prompt)}
-                        className="px-6 bg-purple-600 rounded-xl font-bold text-xs uppercase tracking-widest text-white hover:bg-purple-500 transition-all active:scale-95 shadow-glow"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {['Remove Background', 'Style Transfer', 'Upscale x2', 'Color Balance'].map((preset, idx) => (
-                        <button 
-                          key={preset}
-                          onClick={() => editImage(preset)}
-                          className="px-3 py-1.5 bg-white/5 border border-white/5 rounded-lg text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-white hover:bg-white/10 transition-all animate-slide-up-fade"
-                          style={{ animationDelay: `${idx * 50}ms` }}
-                        >
-                          {preset}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'analyze' && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { label: 'Caption', task: 'Generate a detailed caption for this image.' },
-                        { label: 'OCR', task: 'Extract all text from this image and list it clearly.' },
-                        { label: 'Objects', task: 'Detect and list all significant objects in this image.' },
-                        { label: 'Scene', task: 'Describe the mood, lighting, and composition.' }
-                      ].map((item, idx) => (
-                        <button 
-                          key={item.label}
-                          onClick={() => analyzeImage(item.task)}
-                          className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:border-purple-500/40 hover:bg-purple-500/5 transition-all text-left flex items-center justify-between group animate-slide-up-fade"
-                          style={{ animationDelay: `${idx * 50}ms` }}
-                        >
-                          {item.label}
-                          <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">neuroscience</span>
-                        </button>
-                      ))}
-                    </div>
-                    {analysisResult && (
-                      <div className="p-4 bg-purple-500/5 border border-purple-500/20 rounded-2xl space-y-2 animate-pop-in shadow-inner">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="material-symbols-outlined text-[16px] text-purple-400 animate-pulse">insights</span>
-                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-purple-300">Neural Insights</span>
-                        </div>
-                        <p className="text-sm text-gray-300 leading-relaxed font-medium">{analysisResult}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-
-      case 'history':
-        return (
-          <div className="space-y-4 animate-slide-up-fade">
-            {history.length === 0 ? (
-              <div className="text-center py-20 opacity-20">
-                <span className="material-symbols-outlined text-4xl mb-4">history</span>
-                <p className="text-[10px] font-black uppercase tracking-widest">No visual history detected</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 max-h-[500px] overflow-y-auto no-scrollbar pr-1">
-                {history.map((item, idx) => (
-                  <div 
-                    key={item.id} 
-                    className="group relative rounded-xl overflow-hidden border border-white/5 bg-black/20 aspect-square animate-slide-up-fade"
-                    style={{ animationDelay: `${idx * 50}ms` }}
-                  >
-                    <img src={item.imageUrl} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-between">
-                      <p className="text-[10px] text-white font-medium line-clamp-3 leading-relaxed">{item.prompt}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">{item.type}</span>
-                        <div className="flex gap-2">
-                           <button 
-                             onClick={() => { setResultImage(item.imageUrl); triggerHaptic(10); }}
-                             className="p-1.5 bg-white/5 rounded-lg hover:bg-white/20 transition-all"
-                           >
-                             <span className="material-symbols-outlined text-[14px] text-white">preview</span>
-                           </button>
-                           <button 
-                             onClick={() => { window.open(item.imageUrl, '_blank'); triggerHaptic(5); }}
-                             className="p-1.5 bg-purple-500/20 rounded-lg hover:bg-purple-500/40 transition-all"
-                           >
-                             <span className="material-symbols-outlined text-[14px] text-white">open_in_new</span>
-                           </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-    }
-  };
-
   return (
-    <div className="h-full flex flex-col md:flex-row bg-transparent relative">
+    <div className="h-full flex flex-col md:flex-row bg-transparent relative overflow-hidden">
       {/* Sidebar Controls */}
-      <div className="w-full md:w-[400px] flex-shrink-0 border-r border-white/5 bg-[#08090f]/80 backdrop-blur-3xl flex flex-col overflow-y-auto no-scrollbar relative z-20">
-        <div className="p-8 space-y-8 flex-1">
-          <header className="animate-slide-up-fade">
-            <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-              Vision <span className="text-gradient animate-text-gradient">Studio</span>
-            </h2>
-            <div className="flex items-center gap-3 mt-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-600">Neural Engine v4.0</p>
-                <div className="h-px flex-1 bg-gradient-to-r from-gray-800 to-transparent"></div>
+      <div className="w-full md:w-[420px] flex-shrink-0 border-r border-white/5 bg-[#08090f]/90 backdrop-blur-3xl p-6 flex flex-col gap-6 z-20 overflow-y-auto no-scrollbar">
+        <header className="animate-pop-in flex flex-col gap-1.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-vibrant-indigo">
+              <span className="material-symbols-outlined text-white text-[20px]">local_cafe</span>
             </div>
-          </header>
-
-          <nav className="relative bg-[#0d0f17] rounded-2xl p-1 shadow-2xl animate-slide-up-fade" style={{ animationDelay: '100ms' }}>
-            {/* Sliding Tab Indicator */}
-            <div 
-                className="absolute top-1 bottom-1 bg-purple-600 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-glow"
-                style={{
-                    left: `${(tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)) + 0.5}%`,
-                    width: `${(100 / tabs.length) - 1}%`
-                }}
-            ></div>
-            
-            <div className="relative flex z-10">
-                {tabs.map(tab => (
-                <button
-                    key={tab.id}
-                    onClick={() => { triggerHaptic(10); setActiveTab(tab.id as VisionTab); }}
-                    className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                >
-                    <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
-                    <span className="text-[8px] font-black uppercase tracking-widest">{tab.label}</span>
-                </button>
-                ))}
-            </div>
-          </nav>
-
-          <div className="relative min-h-[400px]">
-            {renderTabContent()}
+            <h2 className="text-xl font-black text-white tracking-tight">Vision <span className="text-gradient">Studio</span></h2>
           </div>
+          <div className="flex items-center justify-between">
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-600 ml-1">Architect v4.6 // High-Limit Flash</p>
+            <button onClick={() => (window as any).aistudio.openSelectKey()} className="text-[8px] font-black text-indigo-400/60 hover:text-indigo-400 uppercase tracking-widest transition-all">Select Personal Key</button>
+          </div>
+        </header>
+
+        {/* Tab Selection */}
+        <div className="flex gap-1 p-1.5 bg-[#0d0f17] rounded-2xl relative overflow-hidden border border-white/5 animate-slide-up-fade" style={{ animationDelay: '0.1s' }}>
+          {(['trending', 'generate', 'edit', 'analyze'] as VisionTab[]).map(tab => (
+            <button 
+              key={tab} 
+              onClick={() => {
+                setActiveTab(tab);
+                if (tab !== 'trending') {
+                    setSelectedTool(null);
+                    setSelectedCategory(null);
+                }
+              }} 
+              className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-500 z-10 ${activeTab === tab ? 'bg-indigo-600 text-white shadow-glow' : 'text-gray-500 hover:text-white'}`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
 
-        {/* Quota Indication */}
-        <div className="p-8 border-t border-white/5 space-y-4 bg-black/20 animate-slide-up-fade" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Free Tier Usage</span>
-            <div className="flex items-center gap-1.5">
-                <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                </span>
-                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Active</span>
+        {/* Dynamic Content Area */}
+        <div className="flex-1 transition-all duration-500 min-h-0">
+          {activeTab === 'trending' ? (
+            <div className="space-y-6 animate-reveal h-full flex flex-col">
+              {!selectedCategory ? (
+                <div className="grid grid-cols-1 gap-3.5 staggered-list">
+                  {categories.map((cat, i) => (
+                    <button 
+                      key={cat.id} 
+                      onClick={() => setSelectedCategory(cat)}
+                      style={{ animationDelay: `${0.1 + i * 0.05}s` }}
+                      className="group relative h-28 overflow-hidden rounded-[1.8rem] border border-white/5 transition-all duration-700 hover:-translate-y-1.5 hover:shadow-2xl"
+                    >
+                      <div className={`absolute inset-0 bg-gradient-to-br ${cat.gradient} opacity-20 group-hover:opacity-40 transition-opacity duration-700`}></div>
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_black_100%)] opacity-40"></div>
+                      <div className="relative h-full flex items-center gap-5 px-6">
+                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                          <span className="material-symbols-outlined text-[32px]">{cat.icon}</span>
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="text-[13px] font-black uppercase text-white tracking-[0.15em] group-hover:tracking-[0.2em] transition-all">{cat.name}</p>
+                          <p className="text-[10px] text-gray-400 mt-1 font-medium">{cat.description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : !selectedTool ? (
+                <div className="space-y-5 animate-spring-in">
+                  <div className="flex items-center justify-between">
+                    <button onClick={() => setSelectedCategory(null)} className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-colors group">
+                      <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span> Hub
+                    </button>
+                    <span className="text-[8px] font-black text-gray-700 uppercase tracking-[0.3em]">{selectedCategory.name}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 staggered-list">
+                    {selectedCategory.tools.map((tool, i) => (
+                      <button 
+                        key={tool.name} 
+                        onClick={() => setSelectedTool(tool)}
+                        style={{ animationDelay: `${i * 0.05}s` }}
+                        className="group flex flex-col gap-3 p-4 bg-white/[0.03] border border-white/5 rounded-2xl hover:bg-white/[0.08] hover:border-white/10 transition-all text-left relative overflow-hidden"
+                      >
+                        <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center ${tool.color} group-hover:scale-110 group-hover:rotate-3 transition-transform`}>
+                          <span className="material-symbols-outlined text-[24px]">{tool.icon}</span>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-black text-white leading-tight uppercase tracking-wider">{tool.name}</p>
+                          <p className="text-[9px] text-gray-500 mt-1 leading-relaxed opacity-80">{tool.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-8 animate-reveal h-full flex flex-col">
+                   <div className="flex items-center justify-between">
+                    <button onClick={() => setSelectedTool(null)} className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-colors group">
+                      <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span> Tools
+                    </button>
+                    <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.3em] animate-pulse">Neural Sequence Ready</span>
+                  </div>
+
+                  <div className="flex flex-col gap-4 p-6 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 shadow-inner relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                         <span className={`material-symbols-outlined text-[100px] ${selectedTool.color}`}>{selectedTool.icon}</span>
+                    </div>
+                    <div className="relative z-10">
+                        <h3 className="text-2xl font-black text-white uppercase tracking-tight">{selectedTool.name}</h3>
+                        <p className="text-xs text-gray-400 font-medium mt-1 leading-relaxed">{selectedTool.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-4 flex-1">
+                     <p className="text-[9px] font-black text-gray-600 uppercase tracking-[0.4em] ml-2">Choose Synthesis Method</p>
+                     
+                     <button 
+                        onClick={() => initiateAction('generate')}
+                        className="group relative flex items-center gap-5 p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-indigo-500/30 transition-all duration-500 text-left"
+                     >
+                        <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:shadow-glow transition-all">
+                             <span className="material-symbols-outlined text-[32px]">edit_note</span>
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-[13px] font-black text-white uppercase tracking-wider">Neural Synthesis</p>
+                            <p className="text-[10px] text-gray-500 mt-0.5 font-medium">Generate brand new image from prompt</p>
+                        </div>
+                     </button>
+
+                     <button 
+                        onClick={() => initiateAction('edit')}
+                        className="group relative flex items-center gap-5 p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-purple-500/30 transition-all duration-500 text-left"
+                     >
+                        <div className="w-14 h-14 rounded-2xl bg-purple-600/20 flex items-center justify-center text-purple-400 group-hover:scale-110 group-hover:shadow-glow transition-all">
+                             <span className="material-symbols-outlined text-[32px]">image_search</span>
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-[13px] font-black text-white uppercase tracking-wider">Style Transformation</p>
+                            <p className="text-[10px] text-gray-500 mt-0.5 font-medium">Apply viral style to your own photo</p>
+                        </div>
+                     </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full w-1/4 bg-gradient-to-r from-emerald-600 to-emerald-400 animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
-          </div>
-          <p className="text-[8px] font-bold text-gray-700 leading-relaxed uppercase tracking-widest">
-            Heliex uses Google AI Studio Free Tier. Generating visuals may take up to 30s depending on neural load.
-          </p>
+          ) : (activeTab === 'generate' || activeTab === 'edit') ? (
+            <div className="space-y-6 animate-spring-in">
+              {activeTab === 'edit' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Source Artifact</p>
+                    {currentImage && <button onClick={() => setCurrentImage(null)} className="text-[9px] font-black text-red-500 uppercase">Clear</button>}
+                  </div>
+                  {!currentImage ? (
+                    <div onClick={() => fileInputRef.current?.click()} className="group h-44 border-2 border-dashed border-white/10 rounded-[2rem] flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all duration-500">
+                      <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-600 group-hover:scale-110 group-hover:text-indigo-400 transition-all">
+                        <span className="material-symbols-outlined text-[32px]">add_photo_alternate</span>
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 group-hover:text-gray-300">Upload Data Frame</p>
+                      <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} accept="image/*" />
+                    </div>
+                  ) : (
+                    <div className="relative group rounded-[2rem] overflow-hidden border border-white/10 shadow-lg h-44 animate-pop-in">
+                      <img src={currentImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                         <span className="text-[9px] font-black text-white uppercase tracking-widest opacity-80">Reference Buffer Active</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Synthesis Logic</p>
+                <div className="relative">
+                  <textarea 
+                    value={prompt} 
+                    onChange={(e) => setPrompt(e.target.value)} 
+                    placeholder="Input descriptive sequence..." 
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-white text-xs h-28 outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all hover:bg-white/[0.06] no-scrollbar placeholder-gray-700" 
+                  />
+                  <div className="absolute bottom-3 right-3 text-[8px] font-black text-gray-700 tracking-tighter uppercase">{prompt.length} CHR</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3.5">
+                <div className="space-y-2">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-gray-600 ml-1">Composition</p>
+                  <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-[#0d0f17] border border-white/10 rounded-xl p-3 text-[10px] text-white outline-none hover:border-white/20 transition-all appearance-none">
+                    <option value="1:1">Standard 1:1</option>
+                    <option value="16:9">Wide 16:9</option>
+                    <option value="9:16">Portrait 9:16</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-gray-600 ml-1">Visual Core</p>
+                  <select value={style} onChange={(e) => setStyle(e.target.value)} className="w-full bg-[#0d0f17] border border-white/10 rounded-xl p-3 text-[10px] text-white outline-none hover:border-white/20 transition-all appearance-none">
+                    <option value="photorealistic">Hyper Realistic</option>
+                    <option value="anime">Celestial Anime</option>
+                    <option value="digital-art">Unreal Render</option>
+                  </select>
+                </div>
+              </div>
+
+              <button 
+                onClick={generateImage} 
+                disabled={isLoading || !prompt} 
+                className={`w-full py-4 bg-indigo-600 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-super-glow transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed group overflow-hidden relative ${isLoading ? 'animate-pulse' : 'hover:bg-indigo-500 hover:scale-[1.02]'}`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <span className="relative z-10">{isLoading ? 'Processing Neural Sequence...' : (activeTab === 'edit' ? 'Modify Result' : 'Initiate Synthesis')}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-6 animate-spring-in">
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Target Buffer</p>
+              {!currentImage ? (
+                <div onClick={() => fileInputRef.current?.click()} className="group h-64 border-2 border-dashed border-white/10 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all duration-500">
+                  <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-gray-600 group-hover:scale-110 group-hover:text-indigo-400 group-hover:rotate-12 transition-all">
+                    <span className="material-symbols-outlined text-[48px]">scan</span>
+                  </div>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 group-hover:text-gray-300">Analyze Visual Stream</p>
+                  <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} accept="image/*" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="relative group rounded-[2.5rem] overflow-hidden border border-white/10 shadow-xl animate-pop-in">
+                    <img src={currentImage} className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-1000" />
+                    <button onClick={() => setCurrentImage(null)} className="absolute top-4 right-4 p-2 bg-red-500/80 rounded-full text-white hover:scale-110 active:scale-90 transition-all shadow-lg"><span className="material-symbols-outlined text-sm">close</span></button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <button onClick={() => analyzeImage("Describe the subject and style in extreme detail.")} className="py-3.5 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 hover:border-white/20 transition-all shadow-sm">Extract Insight</button>
+                    <button onClick={() => analyzeImage("Identify colors, lighting style and technical metadata.")} className="py-3.5 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 hover:border-white/20 transition-all shadow-sm">Technical Scan</button>
+                  </div>
+                  {analysisResult && (
+                    <div className="p-5 bg-[#0d0f17] rounded-[1.8rem] border border-indigo-500/10 text-[11px] text-indigo-100 leading-relaxed animate-reveal shadow-lg">
+                      <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
+                         <span className="material-symbols-outlined text-[16px] text-indigo-400">psychology</span>
+                         <span className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Neural Logic Report</span>
+                      </div>
+                      {analysisResult}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Preview Workspace */}
-      <div className="flex-1 p-6 md:p-12 bg-transparent flex items-center justify-center relative overflow-hidden group">
+      {/* Main Canvas Viewport */}
+      <div className="flex-1 p-8 md:p-14 bg-[#020408]/60 flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.05)_0%,_transparent_70%)] pointer-events-none animate-neural-pulse"></div>
         
-        {/* Dynamic Background Effects */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-600/5 rounded-full blur-[140px] pointer-events-none animate-nebula-pulse"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.01)_0%,transparent_100%)] pointer-events-none"></div>
-
-        {isLoading ? (
-          <div className="flex flex-col items-center gap-8 animate-pulse z-10 transition-all duration-700">
-            <div className="relative">
-              <div className="absolute -inset-12 bg-purple-500/20 rounded-full blur-3xl animate-blob"></div>
-              {/* Spinning Ring Animation */}
-              <div className="absolute -inset-4 border-2 border-dashed border-purple-500/20 rounded-full animate-spin-slow"></div>
-              <div className="absolute -inset-8 border border-white/5 rounded-full animate-spin-reverse-slow"></div>
-              
-              <div className="w-24 h-24 rounded-3xl bg-purple-500/10 flex items-center justify-center relative backdrop-blur-2xl border border-white/10">
-                <span className="material-symbols-outlined text-5xl text-purple-400 animate-float-mascot">psychology</span>
+        {resultImage ? (
+          <div className="max-w-5xl w-full animate-reveal relative group">
+            <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-pink-500/30 rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+            <div className="relative rounded-[2.5rem] overflow-hidden border border-white/10 shadow-cosmic-soft group-hover:scale-[1.015] transition-transform duration-1000 cursor-zoom-in">
+              <img src={resultImage} className="w-full h-auto" alt="AI Generated Artifact" />
+              <div className="absolute bottom-10 right-10 flex gap-4 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 delay-100">
+                <a 
+                  href={resultImage} 
+                  download="heliex_vision.png" 
+                  className="w-14 h-14 bg-white/10 backdrop-blur-2xl rounded-2xl border border-white/20 text-white flex items-center justify-center hover:bg-white/20 hover:scale-110 active:scale-90 transition-all shadow-2xl"
+                >
+                  <span className="material-symbols-outlined text-[28px]">download</span>
+                </a>
+                <button 
+                  onClick={() => { setCurrentImage(resultImage); setActiveTab('edit'); }} 
+                  className="w-14 h-14 bg-indigo-600 rounded-2xl text-white flex items-center justify-center hover:bg-indigo-500 hover:scale-110 active:scale-90 transition-all shadow-2xl shadow-indigo-500/20"
+                >
+                  <span className="material-symbols-outlined text-[28px]">edit_note</span>
+                </button>
               </div>
-            </div>
-            <div className="text-center space-y-3">
-              <h3 className="text-xl font-black text-white uppercase tracking-[0.2em] animate-pulse">Neural Synthesis</h3>
-              <div className="flex items-center justify-center gap-2">
-                 <div className="h-0.5 w-12 bg-gradient-to-r from-transparent to-purple-500/40"></div>
-                 <p className="text-[10px] font-black text-gray-600 tracking-[0.4em] uppercase">Processing Quantum Data</p>
-                 <div className="h-0.5 w-12 bg-gradient-to-l from-transparent to-purple-500/40"></div>
-              </div>
-            </div>
-          </div>
-        ) : resultImage ? (
-          <div className="w-full max-w-3xl animate-pop-in z-10 space-y-8">
-            <div className="relative group/result rounded-[2.5rem] overflow-hidden border border-white/10 shadow-cosmic-soft bg-black/40 ring-1 ring-white/5 p-2">
-              <div className="relative rounded-[2.2rem] overflow-hidden">
-                <img src={resultImage} className="w-full h-auto transition-transform duration-2000 group-hover/result:scale-105" />
-                
-                {/* Visual Scanning Effect on Entrance */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_15px_rgba(168,85,247,1)] animate-[reveal_2s_ease-in-out_forwards] pointer-events-none opacity-0 group-hover/result:opacity-100"></div>
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover/result:opacity-100 transition-opacity duration-700 p-10 flex flex-col justify-end">
-                  <div className="flex gap-4 animate-slide-up-fade">
-                    <button 
-                      onClick={() => { setCurrentImage(resultImage); setActiveTab('edit'); triggerHaptic(10); }}
-                      className="flex-1 flex items-center justify-center gap-3 px-8 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white hover:bg-white/10 hover:border-purple-500/40 transition-all active:scale-95 group/btn"
-                    >
-                      <span className="material-symbols-outlined text-[20px] transition-transform group-hover/btn:rotate-12">edit_note</span>
-                      Modify in Studio
-                    </button>
-                    <a 
-                      href={resultImage} 
-                      download="heliex-vision.png"
-                      className="flex-1 flex items-center justify-center gap-3 px-8 py-4 bg-purple-600 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white hover:bg-purple-500 transition-all active:scale-95 shadow-glow group/btn"
-                    >
-                      <span className="material-symbols-outlined text-[20px] transition-transform group-hover/btn:-translate-y-1">download</span>
-                      Export 2K Resolution
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-center gap-4 opacity-30 select-none animate-slide-up-fade" style={{ animationDelay: '500ms' }}>
-              <div className="h-px w-24 bg-gradient-to-r from-transparent to-white"></div>
-              <span className="text-[9px] font-black uppercase tracking-[0.6em] text-white">Synthesized Result</span>
-              <div className="h-px w-24 bg-gradient-to-l from-transparent to-white"></div>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-10 opacity-20 z-10 select-none animate-slide-up-fade">
-             <div className="relative">
-                <div className="absolute -inset-16 bg-white/5 rounded-full blur-[100px] animate-nebula-pulse"></div>
-                <div className="w-32 h-32 rounded-[2.5rem] bg-white/5 flex items-center justify-center border border-white/10 relative overflow-hidden group/canvas-placeholder">
-                    <span className="material-symbols-outlined text-7xl text-white group-hover/canvas-placeholder:scale-110 transition-transform duration-1000">image_search</span>
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover/canvas-placeholder:animate-shimmer"></div>
-                </div>
-             </div>
-             <div className="text-center max-w-sm space-y-4">
-               <h3 className="text-2xl font-black text-white uppercase tracking-[0.2em]">Neural Canvas</h3>
-               <p className="text-[11px] font-bold text-gray-500 leading-relaxed uppercase tracking-[0.25em]">Ready to manifest your concepts. Define a prompt or upload data to initiate the creative synthesis cycle.</p>
-             </div>
+          <div className="text-center opacity-10 animate-float-mascot max-w-sm flex flex-col items-center">
+            <div className="w-32 h-32 rounded-full border border-white/20 flex items-center justify-center mb-8 relative">
+              <span className="material-symbols-outlined text-[80px] text-white">camera</span>
+              <div className="absolute inset-0 rounded-full border border-indigo-500/40 animate-spin-slow"></div>
+              <div className="absolute inset-2 rounded-full border border-purple-500/20 animate-spin-reverse-slow"></div>
+            </div>
+            <p className="text-lg font-black uppercase tracking-[0.5em] text-white leading-tight">Neural Nexus<br/><span className="text-sm opacity-60">Ready for Buffer</span></p>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="absolute inset-0 bg-[#020408]/80 backdrop-blur-md flex flex-col items-center justify-center z-50 animate-reveal">
+            <div className="relative">
+              <div className="w-24 h-24 border-2 border-indigo-500/10 border-t-indigo-500 rounded-full animate-spin"></div>
+              <div className="absolute inset-4 border-2 border-purple-500/10 border-b-purple-500 rounded-full animate-spin-reverse-slow"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="material-symbols-outlined text-indigo-400 animate-pulse">neurology</span>
+              </div>
+            </div>
+            <div className="mt-10 flex flex-col items-center gap-2">
+              <p className="text-[12px] font-black uppercase tracking-[0.4em] text-white animate-pulse">Synthesizing Sequence</p>
+              <div className="w-48 h-[2px] bg-white/5 rounded-full mt-2 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 animate-shimmer w-full"></div>
+              </div>
+              <p className="text-[10px] font-bold text-gray-500 mt-4">Flash Diffusion Core Active...</p>
+              <p className="text-[8px] text-indigo-400/50 uppercase tracking-widest mt-2">Free High-Limit Tier</p>
+            </div>
           </div>
         )}
       </div>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FeaturedTool, ChatMode } from '../types';
 
@@ -8,46 +9,46 @@ interface FeaturedToolsProps {
 const tools: FeaturedTool[] = [
   {
     icon: 'table_chart',
-    title: 'Data Pilot',
+    title: 'DATA PILOT',
     description: 'Visualize complex datasets with advanced neural processing.',
-    gradientFrom: 'from-blue-600',
-    gradientTo: 'to-indigo-800',
-    textColor: 'text-blue-100',
+    gradientFrom: 'bg-indigo-600',
+    gradientTo: 'from-indigo-600 to-indigo-800',
+    textColor: 'text-indigo-100',
     id: 'data'
   },
   {
     icon: 'palette',
-    title: 'Creative Studio',
+    title: 'CREATIVE STUDIO',
     description: 'Design and modify visuals using generative diffusion models.',
-    gradientFrom: 'from-purple-600',
-    gradientTo: 'to-pink-700',
-    textColor: 'text-purple-100',
+    gradientFrom: 'bg-pink-700',
+    gradientTo: 'from-pink-700 to-fuchsia-900',
+    textColor: 'text-pink-100',
     id: 'creative'
   },
   {
     icon: 'terminal',
-    title: 'Code Architect',
+    title: 'CODE ARCHITECT',
     description: 'Advanced debugging and architectural code generation.',
-    gradientFrom: 'from-emerald-600',
-    gradientTo: 'to-teal-800',
+    gradientFrom: 'bg-emerald-700',
+    gradientTo: 'from-emerald-700 to-teal-900',
     textColor: 'text-emerald-100',
     id: 'code'
   },
   {
     icon: 'public',
-    title: 'Web Research',
+    title: 'WEB RESEARCH',
     description: 'Live internet browsing with real-time fact checking.',
-    gradientFrom: 'from-cyan-600',
-    gradientTo: 'to-blue-600',
-    textColor: 'text-cyan-100',
+    gradientFrom: 'bg-blue-600',
+    gradientTo: 'from-blue-600 to-blue-800',
+    textColor: 'text-blue-100',
     id: 'web'
   },
   {
     icon: 'description',
-    title: 'Doc Analysis',
+    title: 'DOC ANALYSIS',
     description: 'PDF & Docx summary with semantic context extraction.',
-    gradientFrom: 'from-orange-500',
-    gradientTo: 'to-red-600',
+    gradientFrom: 'bg-orange-600',
+    gradientTo: 'from-orange-600 to-red-700',
     textColor: 'text-orange-100',
     id: 'doc'
   },
@@ -60,16 +61,16 @@ const FeaturedTools: React.FC<FeaturedToolsProps> = ({ onSelect }) => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-6 px-1">
-        <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Featured Toolbox</h2>
+      <div className="flex justify-between items-center mb-2 px-1 animate-slide-up-fade" style={{ animationDelay: '0.3s' }}>
+        <h2 className="text-[8px] font-black text-gray-600 uppercase tracking-[0.4em] opacity-80">TOOLBOX</h2>
         <button 
           onClick={() => triggerHaptic()}
-          className="text-[10px] font-black text-indigo-500 hover:text-indigo-400 flex items-center gap-1 transition-all group tracking-widest uppercase"
+          className="text-[8px] font-black text-indigo-400 hover:text-indigo-300 transition-all tracking-widest uppercase"
         >
-          Library <span className="material-symbols-outlined text-[14px] transition-transform duration-300 group-hover:translate-x-1">chevron_right</span>
+          LIBRARY
         </button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-5 gap-2 staggered-list" style={{ animationDelay: '0.4s' }}>
         {tools.map((tool, index) => (
           <div 
             key={index} 
@@ -77,36 +78,21 @@ const FeaturedTools: React.FC<FeaturedToolsProps> = ({ onSelect }) => {
               triggerHaptic(15);
               onSelect?.(tool.id);
             }}
-            className="relative group rounded-2xl cursor-pointer hover:-translate-y-1.5 transition-all duration-500 active:scale-95"
+            style={{ animationDelay: `${0.4 + index * 0.05}s` }}
+            className={`relative group rounded-2xl cursor-pointer transition-all duration-500 hover:-translate-y-1 active:scale-95 overflow-hidden h-24 flex flex-col justify-end p-3 ${tool.gradientFrom} shadow-lg`}
           >
+            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent opacity-40"></div>
             
-            {/* Tooltip Overlay */}
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full w-48 pointer-events-none z-50 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-hover:-translate-y-[calc(100%+8px)] transition-all duration-300 ease-out">
-              <div className="relative bg-[#0a0c14]/90 backdrop-blur-xl border border-white/10 p-3 rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] text-center">
-                <p className="text-[11px] font-medium text-gray-200 leading-relaxed">
-                  {tool.description}
-                </p>
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#0a0c14]/90 border-r border-b border-white/10 rotate-45"></div>
+            <div className="relative z-10 flex flex-col gap-1.5">
+              <div className="w-6 h-6 rounded bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-white text-[14px]">{tool.icon}</span>
               </div>
-            </div>
-
-            {/* Background Gradient */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${tool.gradientFrom} ${tool.gradientTo} rounded-2xl opacity-90 group-hover:opacity-100 transition-opacity`}></div>
-            
-            {/* Inner Glow */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.25)_0%,_transparent_75%)] rounded-2xl"></div>
-            
-            <div className="relative p-6 h-36 flex flex-col justify-between z-10">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                <span className="material-symbols-outlined text-white text-[22px] transition-all duration-500 group-hover:scale-110 group-hover:rotate-12">{tool.icon}</span>
-              </div>
-              <div>
-                <h3 className="text-white font-black text-[11px] tracking-widest group-hover:translate-x-1 transition-transform duration-300 uppercase">{tool.title}</h3>
-                <div className="h-0.5 w-4 bg-white/30 group-hover:w-full transition-all duration-500 mt-1"></div>
-              </div>
+              <h3 className="text-white font-black text-[8px] tracking-widest leading-tight">
+                {tool.title.split(' ')[0]}<br/>{tool.title.split(' ')[1]}
+              </h3>
             </div>
             
-            <div className="absolute inset-0 rounded-2xl border border-white/5 group-hover:border-white/20 transition-colors pointer-events-none"></div>
+            <div className={`absolute -inset-2 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-700 ${tool.gradientFrom} animate-pulse-slow`}></div>
           </div>
         ))}
       </div>
